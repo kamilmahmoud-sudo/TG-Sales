@@ -3,7 +3,6 @@ import re
 import sys
 import os
 import threading
-import webview
 import time
 from functools import lru_cache
 from concurrent.futures import ThreadPoolExecutor
