@@ -129,12 +129,17 @@ preset_choice = st.selectbox(
 
 # Decide what the multiselect should start with
 if preset_choice == "Maestro Channels":
-    default_selection = [ch for ch in available_channels if ch in ["App", "Web", "Delivery", "Hunger", "Jahez", "Keeta"]]
+    maestro_list = ["App", "Web", "Delivery", "Hunger", "Jahez", "Keeta"]
+    default_selection = [ch for ch in maestro_list if ch in available_channels]
+
 elif preset_choice == "New Brands Channels":
-    default_selection = [ch for ch in available_channels if ch in ["Hunger", "Jahez", "Keeta", "The Chefz", "ToYou"]]
+    new_brands_list = ["Hunger", "Jahez", "Keeta", "The Chefz", "ToYou"]
+    default_selection = [ch for ch in new_brands_list if ch in available_channels]
+
 elif preset_choice == "All channels (default)":
-    default_selection = available_channels
-else:  # "Custom (start with all, then edit)"
+    default_selection = available_channels  # already ordered as they appear in file
+
+else:  # Custom
     default_selection = available_channels
 
 # You can STILL change/add/remove after choosing a preset 👇
