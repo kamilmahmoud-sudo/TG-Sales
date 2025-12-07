@@ -119,7 +119,7 @@ def process_channel(args: Tuple[str, str]) -> Tuple[str, float, float]:
 
 # NEW: bind title to session_state + callback
 title = st.text_input(
-    "Report Title (e.g., Maestro)",
+    "Report Title (e.g., Maestro, Pinzatta, MAD, etc.)",
     "",
     key="report_title",
     on_change=update_preset_from_title,
@@ -249,4 +249,5 @@ if lw_sales and total_sales:
     # Output as ONE text block
     st.text("\n".join(main_lines))
 else:
+
     st.error("❗ Invalid sales input or missing 'TOTAL SALES' in raw data")
