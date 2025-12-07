@@ -249,4 +249,9 @@ if lw_sales and total_sales:
     # Output as ONE text block
     st.text("\n".join(main_lines))
 else:
+
     st.error("❗ Invalid sales input or missing 'TOTAL SALES' in raw data")
+
+    # Output as ONE text block with copy button
+    final_output = "\n".join(main_lines)
+    st.code(final_output, language="text")
