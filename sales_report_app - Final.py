@@ -29,16 +29,22 @@ CHANNEL_SPLIT_PATTERN = re.compile(r"-{35}|={35}")
 
 st.title("📊 DFC Sales Summary Generator")
 
-# NEW: init session_state default for preset
+# --- Preset state management ---
+
+# current preset value
 if "preset_choice" not in st.session_state:
     st.session_state.preset_choice = "All channels (default)"
 
-# NEW: function to auto-select preset from title
-def update_preset_from_title():
-    title_val = st.session_state.get("report_title", "")
-    lower = title_val.lower()
+# whether user has manually changed the preset
+if "preset_was_manual" not in st.session_state:
+    st.session_state.preset_was_manual = False
 
+def auto_preset_from_title(title: str) -> str:
+    lower = title.lower()
+
+    # default
     preset = "All channels (default)"
+
     if "maestro" in lower:
         preset = "Maestro Channels"
     elif (
@@ -49,7 +55,11 @@ def update_preset_from_title():
     ):
         preset = "New Brands Channels"
 
-    st.session_state.preset_choice = preset
+    return preset
+
+def mark_preset_manual():
+    # called when user changes the preset selectbox
+    st.session_state.preset_was_manual = True
 
 # --- Helper Functions ---
 @lru_cache(maxsize=32)
@@ -117,13 +127,39 @@ def process_channel(args: Tuple[str, str]) -> Tuple[str, float, float]:
 
 # --- Main Logic ---
 
-# NEW: bind title to session_state + callback
+# Title input (drives auto preset unless user has overridden)
 title = st.text_input(
-    "Report Title (e.g., Maestro)",
-    "",
+    "Report Title (e.g., Maestro, MAD, Pinzatta)",
     key="report_title",
-    on_change=update_preset_from_title,
 )
+
+# If user hasn't manually overridden the preset, auto-pick it from the title
+if not st.session_state.preset_was_manual:
+    st.session_state.preset_choice = auto_preset_from_title(title)
+
+preset_options = [
+    "All channels (default)",
+    "Maestro Channels",
+    "New Brands Channels",
+    "Custom (start with all, then edit)",
+]
+
+# Figure out which option index to show in the selectbox
+try:
+    current_index = preset_options.index(st.session_state.preset_choice)
+except ValueError:
+    current_index = 0  # fallback to first option if something is off
+
+# --- Presets section ---
+preset_choice = st.selectbox(
+    "Optional: choose a channel preset",
+    preset_options,
+    index=current_index,
+    on_change=mark_preset_manual,
+)
+
+# keep the chosen preset in session_state for next rerun
+st.session_state.preset_choice = preset_choice
 
 lw_sales_input = st.text_input("Last Week Sales (enter plain number)", "")
 raw_input = st.text_area("Paste the raw sales report text below:")
@@ -146,21 +182,10 @@ for name, _ in blocks:
 
 display_to_original = {v: k for k, v in original_to_display.items()}
 
-# --- Presets section ---
-preset_choice = st.selectbox(
-    "Optional: choose a channel preset",
-    [
-        "All channels (default)",
-        "Maestro Channels",
-        "New Brands Channels",
-        "Custom (start with all, then edit)"
-    ],
-    key="preset_choice",  # NEW: link to session_state
-)
-
 # Decide what the multiselect should start with
 if preset_choice == "Maestro Channels":
     maestro_list = ["App", "Web", "Delivery", "Hunger", "Jahez", "Keeta"]
+    # preserve preset order, only include channels that exist
     default_selection = [ch for ch in maestro_list if ch in available_channels]
 
 elif preset_choice == "New Brands Channels":
@@ -179,7 +204,6 @@ selected_channels = st.multiselect(
     available_channels,
     default=default_selection
 )
-
 
 lw_sales = float(lw_sales_input) if lw_sales_input.replace('.', '').isdigit() else None
 total_sales = extract_total_sales(raw_input)
