@@ -6,6 +6,8 @@ from functools import lru_cache
 from concurrent.futures import ThreadPoolExecutor
 from typing import Tuple, List, Optional
 
+st.set_page_config(layout="wide")
+
 st.title("TG Sales App")
 
 # Special handling for PyInstaller
@@ -277,10 +279,20 @@ def render_report(report_id: int):
     else:
         st.error("❗ Invalid sales input or missing 'TOTAL SALES' in raw data")
 
-# --- Render 3 independent reports ---
+# --- Render 3 independent reports SIDE BY SIDE ---
 st.markdown("---")
-render_report(1)
-st.markdown("---")
-render_report(2)
-st.markdown("---")
-render_report(3)
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.markdown("### 📄 Report 1")
+    render_report(1)
+
+with col2:
+    st.markdown("### 📄 Report 2")
+    render_report(2)
+
+with col3:
+    st.markdown("### 📄 Report 3")
+    render_report(3)
+    
