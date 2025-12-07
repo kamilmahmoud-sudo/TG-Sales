@@ -29,6 +29,28 @@ CHANNEL_SPLIT_PATTERN = re.compile(r"-{35}|={35}")
 
 st.title("📊 DFC Sales Summary Generator")
 
+# NEW: init session_state default for preset
+if "preset_choice" not in st.session_state:
+    st.session_state.preset_choice = "All channels (default)"
+
+# NEW: function to auto-select preset from title
+def update_preset_from_title():
+    title_val = st.session_state.get("report_title", "")
+    lower = title_val.lower()
+
+    preset = "All channels (default)"
+    if "maestro" in lower:
+        preset = "Maestro Channels"
+    elif (
+        "new brands" in lower
+        or "new brand" in lower
+        or "pinzatta" in lower
+        or "mad" in lower
+    ):
+        preset = "New Brands Channels"
+
+    st.session_state.preset_choice = preset
+
 # --- Helper Functions ---
 @lru_cache(maxsize=32)
 def format_sales_input(value: str, is_lw_sales: bool = False) -> str:
@@ -94,7 +116,15 @@ def process_channel(args: Tuple[str, str]) -> Tuple[str, float, float]:
     return name, weekly_delta, percent_of_overall
 
 # --- Main Logic ---
-title = st.text_input("Report Title (e.g., Maestro)", "")
+
+# NEW: bind title to session_state + callback
+title = st.text_input(
+    "Report Title (e.g., Maestro)",
+    "",
+    key="report_title",
+    on_change=update_preset_from_title,
+)
+
 lw_sales_input = st.text_input("Last Week Sales (enter plain number)", "")
 raw_input = st.text_area("Paste the raw sales report text below:")
 
@@ -124,7 +154,8 @@ preset_choice = st.selectbox(
         "Maestro Channels",
         "New Brands Channels",
         "Custom (start with all, then edit)"
-    ]
+    ],
+    key="preset_choice",  # NEW: link to session_state
 )
 
 # Decide what the multiselect should start with
