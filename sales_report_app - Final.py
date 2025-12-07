@@ -3,7 +3,6 @@ import re
 import sys
 import os
 import threading
-import webview
 import time
 from functools import lru_cache
 from concurrent.futures import ThreadPoolExecutor
@@ -189,4 +188,5 @@ if lw_sales and total_sales:
     # Output as ONE text block
     st.text("\n".join(main_lines))
 else:
+
     st.error("❗ Invalid sales input or missing 'TOTAL SALES' in raw data")
