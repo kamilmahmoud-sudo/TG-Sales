@@ -160,16 +160,33 @@ if lw_sales and total_sales:
                     significant_declines.append(display_ch)
                 break
 
-    st.text('\n'.join(breakdown))
-    st.text('\n')
+        # Build one clean text block with correct spacing
+    main_lines = []
+
+    # 1) Breakdown list
+    main_lines.extend(breakdown)
+
+    # One blank line
+    main_lines.append("")
+
+    # 2) Decline sentence (if exists)
     if significant_declines:
         decline_text = ", ".join(significant_declines[:-1])
         if len(significant_declines) > 1:
             decline_text += f" and {significant_declines[-1]}"
         else:
             decline_text = significant_declines[0]
-        st.markdown(f"\n{decline_text} witnessed a significant decline")
-    st.markdown(f"\n% of overall - {', '.join(perc_summary)}")
-    st.text('\n')
+
+        main_lines.append(f"{decline_text} witnessed a significant decline")
+
+        # One blank line after sentence
+        main_lines.append("")
+
+    # 3) % of overall
+    main_lines.append(f"% of overall - {', '.join(perc_summary)}")
+
+    # Output as ONE text block
+    st.text("\n".join(main_lines))
 else:
+
     st.error("❗ Invalid sales input or missing 'TOTAL SALES' in raw data")
