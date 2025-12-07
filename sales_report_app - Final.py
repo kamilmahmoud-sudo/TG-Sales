@@ -12,10 +12,13 @@ st.title("TG Sales App")
 
 # Special handling for PyInstaller
 if getattr(sys, 'frozen', False):
+    # When running as executable
     BASE_DIR = os.path.dirname(sys.executable)
 else:
+    # When running as script
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# --- Pre-compiled Regex Patterns ---
 SALES_PERCENT_PATTERN = re.compile(r"(?:📈-W:|W:).*?([-+]?\d+\.\d{2})%\s*sales")
 TOTAL_SALES_PATTERN = re.compile(r"TOTAL SALES:\s+([\d,\.]+)\s+SR")
 WEEKLY_COMP_PATTERN = re.compile(r"Sales\s+([-+]?\d+\.\d+)%")
@@ -28,6 +31,7 @@ st.title("📊 DFC Sales Summary Generator")
 if "preset_choice" not in st.session_state:
     st.session_state.preset_choice = "All channels (default)"
 
+# NEW: function to auto-select preset from title
 def update_preset_from_title():
     title_val = st.session_state.get("report_title", "")
     lower = title_val.lower()
@@ -35,19 +39,22 @@ def update_preset_from_title():
     preset = "All channels (default)"
     if "maestro" in lower:
         preset = "Maestro Channels"
-    elif ("new brands" in lower
+    elif (
+        "new brands" in lower
         or "new brand" in lower
         or "pinzatta" in lower
-        or "mad" in lower):
+        or "mad" in lower
+    ):
         preset = "New Brands Channels"
 
     st.session_state.preset_choice = preset
 
+# --- Helper Functions ---
 @lru_cache(maxsize=32)
 def format_sales_input(value: str, is_lw_sales: bool = False) -> str:
     try:
         num = float(value)
-
+        
         if num >= 999_500:
             value = round(num/1_000_000, 2)
             formatted = f"{value:.2f}"
@@ -62,13 +69,13 @@ def format_sales_input(value: str, is_lw_sales: bool = False) -> str:
 def extract_channel_blocks(text: str) -> List[Tuple[str, str]]:
     clean_text = re.sub(r'^.*?Sales for All branches are:\s*', '', text, flags=re.DOTALL)
     sections = CHANNEL_SPLIT_PATTERN.split(clean_text)
-
+    
     channel_data = []
     for section in sections:
         section = section.strip()
         if not section:
             continue
-        
+            
         first_line = section.split('\n')[0]
         if ':' in first_line and 'orders' in first_line.lower():
             channel_name = first_line.split(':')[0].strip()
@@ -106,6 +113,9 @@ def process_channel(args: Tuple[str, str]) -> Tuple[str, float, float]:
     percent_of_overall = extract_overall_sales_percent(block)
     return name, weekly_delta, percent_of_overall
 
+# --- Main Logic ---
+
+# bind title to session_state + callback
 title = st.text_input(
     "Report Title (e.g., Maestro)",
     "",
@@ -134,6 +144,7 @@ for name, _ in blocks:
 
 display_to_original = {v: k for k, v in original_to_display.items()}
 
+# --- Presets section ---
 preset_choice = st.selectbox(
     "Optional: choose a channel preset",
     [
@@ -145,6 +156,7 @@ preset_choice = st.selectbox(
     key="preset_choice",
 )
 
+# Decide what the multiselect should start with
 if preset_choice == "Maestro Channels":
     maestro_list = ["App", "Web", "Delivery", "Hunger", "Jahez", "Keeta"]
     default_selection = [ch for ch in maestro_list if ch in available_channels]
@@ -154,11 +166,12 @@ elif preset_choice == "New Brands Channels":
     default_selection = [ch for ch in new_brands_list if ch in available_channels]
 
 elif preset_choice == "All channels (default)":
+    default_selection = available_channels  # already ordered as they appear in file
+
+else:  # Custom
     default_selection = available_channels
 
-else:
-    default_selection = available_channels
-
+# You can STILL change/add/remove after choosing a preset 👇
 selected_channels = st.multiselect(
     "Select channels and their display order",
     available_channels,
@@ -174,10 +187,16 @@ if lw_sales and total_sales:
     overall_indicator = get_indicator(delta)
     est_sales = lw_sales * (1 + delta/100)
 
-    st.markdown(f"[{title}]\n")
-    st.markdown(f"Overall Sales {format_sales_input(total_sales)} SR | {abs(delta):.0f}% {overall_indicator}")
-    st.markdown(f"Est Sales: {format_sales_input(est_sales)}, LW Sales: {formatted_lw}\n")
+    # 🔹 Header lines that will be part of the copy area
+    header_lines = [
+        f"[{title}]",
+        "",
+        f"Overall Sales {format_sales_input(total_sales)} SR | {abs(delta):.0f}% {overall_indicator}",
+        f"Est Sales: {format_sales_input(est_sales)}, LW Sales: {formatted_lw}",
+        ""
+    ]
 
+    # Parallel processing for channels
     with ThreadPoolExecutor() as executor:
         processed_channels = list(executor.map(
             process_channel,
@@ -192,21 +211,27 @@ if lw_sales and total_sales:
         original_ch = display_to_original.get(display_ch)
         if not original_ch:
             continue
-        
+            
         for name, weekly_delta, percent_of_overall in processed_channels:
             if name == original_ch:
                 indicator = get_indicator(weekly_delta)
                 breakdown.append(f"{display_ch} {abs(weekly_delta):.0f}% {indicator}")
                 perc_summary.append(f"{display_ch} {percent_of_overall:.0f}%")
-
+                
                 if weekly_delta <= -30:
                     significant_declines.append(display_ch)
                 break
 
+    # Build one clean text block with correct spacing
     main_lines = []
+
+    # 1) Breakdown list
     main_lines.extend(breakdown)
+
+    # One blank line
     main_lines.append("")
 
+    # 2) Decline sentence (if exists)
     if significant_declines:
         decline_text = ", ".join(significant_declines[:-1])
         if len(significant_declines) > 1:
@@ -214,13 +239,17 @@ if lw_sales and total_sales:
         else:
             decline_text = significant_declines[0]
 
+        # Make bold for WhatsApp
         main_lines.append(f"*{decline_text} witnessed a significant decline*")
+
+        # One blank line after sentence
         main_lines.append("")
 
+    # 3) % of overall
     main_lines.append(f"% of overall - {', '.join(perc_summary)}")
 
-    # ✅ NEW: output with copy button
-    final_output = "\n".join(main_lines)
+    # ✅ Output as ONE text block (header + body) with copy button
+    final_output = "\n".join(header_lines + main_lines)
     st.code(final_output, language="text")
 
 else:
