@@ -27,7 +27,7 @@ WEEKLY_COMP_PATTERN = re.compile(r"Sales\s+([-+]?\d+\.\d+)%")
 OVERALL_SALES_PATTERN = re.compile(r"(\d+\.\d+)%\s*sales")
 CHANNEL_SPLIT_PATTERN = re.compile(r"-{35}|={35}")
 
-st.title("📊 Maestro Sales Summary Generator")
+st.title("📊 DFC Sales Summary Generator")
 
 # --- Helper Functions ---
 @lru_cache(maxsize=32)
@@ -160,7 +160,7 @@ if lw_sales and total_sales:
                     significant_declines.append(display_ch)
                 break
 
-        # Build one clean text block with correct spacing
+    # Build one clean text block with correct spacing
     main_lines = []
 
     # 1) Breakdown list
@@ -177,7 +177,8 @@ if lw_sales and total_sales:
         else:
             decline_text = significant_declines[0]
 
-        main_lines.append(f"{decline_text} witnessed a significant decline")
+        # Make bold for WhatsApp
+        main_lines.append(f"*{decline_text} witnessed a significant decline*")
 
         # One blank line after sentence
         main_lines.append("")
@@ -188,5 +189,4 @@ if lw_sales and total_sales:
     # Output as ONE text block
     st.text("\n".join(main_lines))
 else:
-
     st.error("❗ Invalid sales input or missing 'TOTAL SALES' in raw data")
