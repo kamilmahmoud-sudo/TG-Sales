@@ -114,12 +114,36 @@ for name, _ in blocks:
     available_channels.append(display_name)
     original_to_display[name] = display_name
 
-display_to_original = {v:k for k,v in original_to_display.items()}
+display_to_original = {v: k for k, v in original_to_display.items()}
+
+# --- Presets section ---
+preset_choice = st.selectbox(
+    "Optional: choose a channel preset",
+    [
+        "All channels (default)",
+        "Main channels (App, Web, Delivery)",
+        "Aggregators only (Hunger, Jahez, Keeta)",
+        "Custom (start with all, then edit)"
+    ]
+)
+
+# Decide what the multiselect should start with
+if preset_choice == "Main channels (App, Web, Delivery)":
+    default_selection = [ch for ch in available_channels if ch in ["App", "Web", "Delivery"]]
+elif preset_choice == "Aggregators only (Hunger, Jahez, Keeta)":
+    default_selection = [ch for ch in available_channels if ch in ["Hunger", "Jahez", "Keeta"]]
+elif preset_choice == "All channels (default)":
+    default_selection = available_channels
+else:  # "Custom (start with all, then edit)"
+    default_selection = available_channels
+
+# You can STILL change/add/remove after choosing a preset 👇
 selected_channels = st.multiselect(
     "Select channels and their display order",
     available_channels,
-    default=available_channels
+    default=default_selection
 )
+
 
 lw_sales = float(lw_sales_input) if lw_sales_input.replace('.', '').isdigit() else None
 total_sales = extract_total_sales(raw_input)
