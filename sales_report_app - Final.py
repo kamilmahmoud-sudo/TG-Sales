@@ -121,16 +121,16 @@ preset_choice = st.selectbox(
     "Optional: choose a channel preset",
     [
         "All channels (default)",
-        "Main channels (App, Web, Delivery)",
-        "Aggregators only (Hunger, Jahez, Keeta)",
+        "Maestro Channels",
+        "New Brands Channels",
         "Custom (start with all, then edit)"
     ]
 )
 
 # Decide what the multiselect should start with
-if preset_choice == "Maestro channels":
+if preset_choice == "Maestro Channels":
     default_selection = [ch for ch in available_channels if ch in ["App", "Web", "Delivery", "Hunger", "Jahez", "Keeta"]]
-elif preset_choice == "New Brands channels":
+elif preset_choice == "New Brands Channels":
     default_selection = [ch for ch in available_channels if ch in ["Hunger", "Jahez", "Keeta", "The Chefz", "ToYou"]]
 elif preset_choice == "All channels (default)":
     default_selection = available_channels
