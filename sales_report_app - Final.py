@@ -150,13 +150,12 @@ try:
 except ValueError:
     current_index = 0  # fallback to first option if something is off
 
-# --- Presets section (non-typeable) ---
-preset_choice = st.radio(
+# --- Presets section ---
+preset_choice = st.selectbox(
     "Optional: choose a channel preset",
     preset_options,
     index=current_index,
     on_change=mark_preset_manual,
-    key="preset_choice",
 )
 
 # keep the chosen preset in session_state for next rerun
