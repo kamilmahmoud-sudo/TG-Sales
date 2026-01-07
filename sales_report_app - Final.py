@@ -138,7 +138,11 @@ available_channels = []
 original_to_display = {}
 
 for name, _ in blocks:
-    display_name = name.replace("HungerStation", "Hunger")
+    display_name = (
+    name
+    .replace("HungerStation", "Hunger")
+    .replace("Keeta KSA", "Keeta")
+)
     available_channels.append(display_name)
     original_to_display[name] = display_name
 
@@ -178,7 +182,10 @@ selected_channels = st.multiselect(
     default=default_selection
 )
 
-lw_sales = float(lw_sales_input) if lw_sales_input.replace('.', '').isdigit() else None
+try:
+    lw_sales = float(lw_sales_input.replace(",", ""))
+except ValueError:
+    lw_sales = None
 total_sales = extract_total_sales(raw_input)
 weekly_comparison = extract_weekly_comparison(raw_input)
 
@@ -254,3 +261,4 @@ if lw_sales and total_sales:
 
 else:
     st.error("❗ Invalid sales input or missing 'TOTAL SALES' in raw data")
+
